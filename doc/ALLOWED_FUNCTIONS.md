@@ -95,12 +95,44 @@ int fcntl(int fd, int cmd, ... /* arg */ );
 ## **I/O Multiplexing**
 
 - **poll**: Waits for events on multiple file descriptors.
+- **select**: Waits for events on sets of file descriptors (portable, POSIX).
+- **kqueue (BSD / macOS)**: Kernel event notification interface supporting many event types (I/O, timers, signals, etc.). Scales well for large numbers of descriptors.
+- **epoll (Linux)**: Linux-specific scalable event facility. Uses an interest list manipulated with epoll_ctl and notifies readiness with epoll_wait. Supports level- and edge-triggered modes and flags like EPOLLONESHOT / EPOLLET.
+
+| Feature                   |                                                                 select() |                                            poll() |                                                                                                                         kqueue |                                                                                              epoll |
+| ------------------------- | -----------------------------------------------------------------------: | ------------------------------------------------: | -----------------------------------------------------------------------------------------------------------------------------: | -------------------------------------------------------------------------------------------------: |
+| Portability               |                 Portable across Unix-like systems; limited by FD_SETSIZE |                 Portable across Unix-like systems |                                                                                                               BSD / macOS only |                                                                                         Linux only |
+| Scalability & performance | O(n) scan of fd_sets per call; costly for many fds; must rebuild fd_sets |                O(n) scan of pollfd array per call |                                                                        Kernel-maintained interest list — scalable for many fds |                                Kernel-maintained interest list — scalable; avoids scanning all fds |
+| API semantics             |                       Modifies fd_sets in-place; reinit before each call | Array of struct pollfd; revents returned in-place | Register/unregister via kevent changelists; supports many filters (EVFILT\_\*, timers, signals) and flags (EV_ADD, EV_ONESHOT) | Register/unregister via epoll_ctl; epoll_wait returns ready events; supports EPOLLET, EPOLLONESHOT |
+| Practical advice          |           Good for small/portable apps; watch FD_SETSIZE and reinit cost |               Good for portable small–medium apps |                                                                            Preferred on BSD/macOS for high-concurrency servers |                                                    Preferred on Linux for high-concurrency servers |
+| Edge-triggered / caveat   |                                                           Not applicable |                                    Not applicable |                                                      Can use oneshot/flags; when using edge-like modes, drain I/O until EAGAIN |                           EPOLLET requires draining I/O until EAGAIN to avoid missed notifications |
+
+- select — Use only for very small, highly portable programs or quick prototypes. It is simple but suffers O(n) scans and FD_SETSIZE limits, so it does not scale for many connections.
+- poll — Prefer for portable small-to-medium applications when select’s FD_SETSIZE is a problem. Still O(n) per call, but more flexible and widely supported.
+- kqueue — Best on BSD/macOS for high‑concurrency servers. Kernel‑maintained interest lists and rich filters make it scalable and efficient on those platforms.
+- epoll — Best on Linux for high‑concurrency servers. Scalable and efficient with edge‑triggered and one‑shot modes, but requires careful draining (read/write until EAGAIN) to avoid missed events.
+- Overall guidance — For cross‑platform code prefer poll (or abstract over poll/select), and pick kqueue or epoll when targeting macOS/BSD or Linux respectively for maximum scalability and performance.
 
 ```c
 int poll(struct pollfd *fds, nfds_t nfds, int timeout);
 ```
 
-**Allowed equivalents:** `select()`, `kqueue()`, `epoll()`
+```c
+#include <sys/select.h>
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, struct timeval *timeout);
+```
+
+```c
+#include <sys/poll.h>
+int kqueue(void);
+int kevent(int kq, const struct kevent *changelist, int nchanges, struct kevent *eventlist, int nevents, const struct timespec *timeout);
+```
+
+```c
+int epoll_create1(int flags);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);
+```
 
 ---
 

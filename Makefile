@@ -65,11 +65,11 @@ $(NAME): $(OBJS)
 	@$(CPP) $(CPPFLAGS) $(IFLAGS) $(LDFLAGS) $(OBJS) -o $(NAME)
 	@printf "%b" "$(CL) -> $(BW)[$(NAME)]:\t$(BG)Compilation success\t✅$(NC)\n"
 	@echo "─────────────────────────────────────────────────────$(BY)"
-	@echo "            ▗▄▄▄▖▗▄▄▄▖    ▗▄▄▄▖▗▄▄▖  ▗▄▄▖";
-	@echo "            ▐▌     █        █  ▐▌ ▐▌▐▌   ";
-	@echo "            ▐▛▀▀▘  █        █  ▐▛▀▚▖▐▌   ";
-	@echo "            ▐▌     █ ▗▄▄▄ ▗▄█▄▖▐▌ ▐▌▝▚▄▄▖";
-	@echo "                          by ozamora- and raperez-"
+	@echo "           ▗▄▄▄▖▗▄▄▄▖    ▗▄▄▄▖▗▄▄▖  ▗▄▄▖             "
+	@echo "           ▐▌     █        █  ▐▌ ▐▌▐▌                "
+	@echo "           ▐▛▀▀▘  █        █  ▐▛▀▚▖▐▌                "
+	@echo "           ▐▌     █ ▗▄▄▄ ▗▄█▄▖▐▌ ▐▌▝▚▄▄▖             "
+	@echo "                         by ozamora- and raperez-    "
 	@echo "$(NC)─────────────────────────────────────────────────────"
 
 # Rule to compile object files from source files
